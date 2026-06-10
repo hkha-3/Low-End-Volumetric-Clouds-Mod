@@ -1,0 +1,38 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net472</TargetFramework> 
+    <ImplicitUsings>disable</ImplicitUsings>
+    <Nullable>disable</Nullable>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    
+    <!-- 🚀 CLEAN FALLBACK: Set this path manually just once to let your local project compile -->
+    <KspPath>C:\Kerbal Space Program\Kerbal.Space.Program.v1.12.5.3190.Incl.ALL.DLC\Kerbal.Space.Program.v1.12.5.3190.Incl.ALL.DLC</KspPath>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Core Game Assembly References -->
+    <Reference Include="Assembly-CSharp">
+      <HintPath>$(KspPath)\KSP_x64_Data\Managed\Assembly-CSharp.dll</HintPath>
+    </Reference>
+    <Reference Include="UnityEngine">
+      <HintPath>$(KspPath)\KSP_x64_Data\Managed\UnityEngine.dll</HintPath>
+    </Reference>
+    <Reference Include="UnityEngine.CoreModule">
+      <HintPath>$(KspPath)\KSP_x64_Data\Managed\UnityEngine.CoreModule.dll</HintPath>
+    </Reference>
+    <!-- 🚀 FIXED: Added the Image Conversion Module so .LoadImage compiles perfectly -->
+    <Reference Include="UnityEngine.ImageConversionModule">
+      <HintPath>$(KspPath)\KSP_x64_Data\Managed\UnityEngine.ImageConversionModule.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+
+  <!-- AUTOMATION TASK: Automatically creates the perfect GameData structure for CKAN -->
+  <Target Name="PostBuild" AfterTargets="PostBuildEvent">
+    <MakeDir Directories="$(ProjectDir)GameData\LowEndVolumetricCloudsMod\Plugins\" Condition="!Exists('$(ProjectDir)GameData\LowEndVolumetricCloudsMod\Plugins\')" />
+    <MakeDir Directories="$(ProjectDir)GameData\LowEndVolumetricCloudsMod\Shaders\" Condition="!Exists('$(ProjectDir)GameData\LowEndVolumetricCloudsMod\Shaders\')" />
+    <Copy SourceFiles="$(TargetPath)" DestinationFolder="$(ProjectDir)GameData\LowEndVolumetricCloudsMod\Plugins\" />
+    <Copy SourceFiles="$(ProjectDir)VolumetricCloud.shader" DestinationFolder="$(ProjectDir)GameData\LowEndVolumetricCloudsMod\Shaders\" Condition="Exists('$(ProjectDir)VolumetricCloud.shader')" />
+    <Copy SourceFiles="$(ProjectDir)LowEndVolumetricCloudsMod.version" DestinationFolder="$(ProjectDir)GameData\LowEndVolumetricCloudsMod\" Condition="Exists('$(ProjectDir)LowEndVolumetricCloudsMod.version')" />
+    <Message Text="[CKAN Prep] Successfully copied all files into the new LowEndVolumetricCloudsMod directory structure!" Importance="high" />
+  </Target>
+</Project>
