@@ -22,10 +22,11 @@ This mod is packaged natively to be managed and routed flawlessly by **CKAN**.
 2. Search for `Low End Volumetric Clouds Mod` in the global index.
 3. Check the box and click **Apply Changes**. CKAN will handle the path allocations and file routing automatically for both Steam and portable standalone installs!
 ## 🆕  Later Updates
-The planned updates for 1.1 are listed here. This is an actively upated mod any issues please post them to put in our patch releases:
+The determined updates for 1.1 are listed here. This is an actively upated mod any issues please post them to put in our patch releases (these updates are guarenteed to be implemented):
 *   **EVE**: Purple storms and hurricanes and obvious high pressure.
-*   **In-game Settings** Press alt + 0 or click the green cloud or globe to change parameters.
+*   **In-game Settings** Press alt + 0 or click the green cloud or globe in stock toolbar to change parameters.
 *   **Extra FPS boost** Adding extra optimisation for the game to get an extra up to 15 FPS boost I will be surprised if more.
+*   **Rain Cycles** Adds rain and storms going through a 45 second cycle.
 
 ## 📜 License & Open Source
 This project is completely open-source and distributed under the **GNU GPLv3** license. You are free to inspect our low-end optimization techniques, share the mod, or modify the source code, provided that all derivative works remain entirely open-source under the exact same license terms.
