@@ -24,6 +24,8 @@ This mod is packaged natively to be managed and routed flawlessly by **CKAN**.
 ## 🪐 Later Updates
 The planned updates for 1.1 are listed here. This is an actively upated mod any issues please post them to put in our patch releases:
 *   **EVE**: Purple storms and hurricanes and obvious high pressure.
+*   **In-game Settings** Press alt + 0 or click the green cloud or globe to change parameters.
+*   **Extra FPS boost** Adding extra optimisation for the game to get an extra up to 15 FPS boost I will be surprised if more.
 
 ## 📜 License & Open Source
 This project is completely open-source and distributed under the **GNU GPLv3** license. You are free to inspect our low-end optimization techniques, share the mod, or modify the source code, provided that all derivative works remain entirely open-source under the exact same license terms.
