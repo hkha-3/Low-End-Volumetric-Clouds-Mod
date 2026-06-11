@@ -21,7 +21,7 @@ This mod is packaged natively to be managed and routed flawlessly by **CKAN**.
 1. Open your **CKAN** client application.
 2. Search for `Low End Volumetric Clouds Mod` in the global index.
 3. Check the box and click **Apply Changes**. CKAN will handle the path allocations and file routing automatically for both Steam and portable standalone installs!
-## 🪐 Later Updates
+## 🆕  Later Updates
 The planned updates for 1.1 are listed here. This is an actively upated mod any issues please post them to put in our patch releases:
 *   **EVE**: Purple storms and hurricanes and obvious high pressure.
 *   **In-game Settings** Press alt + 0 or click the green cloud or globe to change parameters.
