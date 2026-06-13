@@ -1,10 +1,17 @@
-name: Build and Release KSP Mod DLL
+name: Build and Package KSP Mod DLL
 
-# Trigger the build when pushing tags matching v* (e.g., v1.0.1) or manually from Actions tab
+# Trigger the build when pushing to main/master branches, tags matching v*, or manually from Actions tab
 on:
   push:
+    branches:
+      - main
+      - master
     tags:
       - 'v*'
+  pull_request:
+    branches:
+      - main
+      - master
   workflow_dispatch:
 
 jobs:
@@ -103,12 +110,9 @@ jobs:
         Compress-Archive -Path "GameData" -DestinationPath "LowEndVolumetricCloudsMod-${{ github.ref_name }}.zip" -Force
         Write-Host "Package creation complete: LowEndVolumetricCloudsMod-${{ github.ref_name }}.zip"
 
-    - name: Automatically Publish to GitHub Release
-      uses: softprops/action-gh-release@v2
+    - name: Upload Build Artifact (.zip)
+      uses: actions/upload-artifact@v4
       with:
-        files: |
-          LowEndVolumetricCloudsMod-${{ github.ref_name }}.zip
-        draft: false
-        prerelease: false
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        name: LowEndVolumetricCloudsMod-${{ github.ref_name }}
+        path: LowEndVolumetricCloudsMod-${{ github.ref_name }}.zip
+        if-no-files-found: error
