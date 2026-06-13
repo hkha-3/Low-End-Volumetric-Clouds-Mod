@@ -1,0 +1,66 @@
+name: Build and Release KSP Mod DLL
+
+# Trigger the build when pushing tags matching v* (e.g., v1.0.1) or manually from Actions tab
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Compile Mod Assemblies
+    runs-on: windows-latest
+
+    steps:
+    - name: Checkout Code Repository
+      uses: actions/checkout@v4
+
+    - name: Setup .NET SDK (Mono compatible MSBuild support)
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '8.0.x'
+
+    - name: Setup MSBuild Platform Environment
+      uses: microsoft/setup-msbuild@v2
+
+    - name: Download Isolated KSP & Unity Reference Assemblies
+      shell: pwsh
+      run: |
+        # KSP mods leverage game-level Assemblies. Since game files aren't in clean runner instances,
+        # we pull clean stripped assemblies to solve reference warnings!
+        New-Item -ItemType Directory -Force -Path "ksp-refs"
+        
+        # Download core references from a reliable public public-stripped-assemblies pool
+        $refSource = "https://raw.githubusercontent.com/HeikaZ/KSP-Stripped-Refs/main/KSP_x64_Data/Managed"
+        Invoke-WebRequest -Uri "$refSource/Assembly-CSharp.dll" -OutFile "ksp-refs/Assembly-CSharp.dll"
+        Invoke-WebRequest -Uri "$refSource/UnityEngine.dll" -OutFile "ksp-refs/UnityEngine.dll"
+        Invoke-WebRequest -Uri "$refSource/UnityEngine.CoreModule.dll" -OutFile "ksp-refs/UnityEngine.CoreModule.dll"
+        Invoke-WebRequest -Uri "$refSource/UnityEngine.ImageConversionModule.dll" -OutFile "ksp-refs/UnityEngine.ImageConversionModule.dll"
+        
+        Write-Host "Success: All KSP/Unity dependency references successfully downloaded!"
+
+    - name: Restore Project NuGet Dependencies
+      run: dotnet restore LowEndVolumetricCloudsMod.csproj
+
+    - name: Compile C# Assembly Binary (.dll)
+      run: |
+        # Run standard dotnet compiler and override local KspPath references with download buffer
+        dotnet build LowEndVolumetricCloudsMod.csproj -c Release -p:KspPath="ksp-refs"
+
+    - name: Package Release Assets for CKAN & Manual Install
+      shell: pwsh
+      run: |
+        # Creates a standardized GameData directory zip matching CKAN rules
+        # ModFiles post-build event copies dll, shader, and version automatically to GameData folder
+        Compress-Archive -Path "GameData/LowEndVolumetricCloudsMod" -DestinationPath "LowEndVolumetricCloudsMod-${{ github.ref_name }}.zip"
+
+    - name: Automatically Publish to GitHub Release
+      uses: softprops/action-gh-release@v2
+      with:
+        files: |
+          LowEndVolumetricCloudsMod-${{ github.ref_name }}.zip
+        draft: false
+        prerelease: false
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
