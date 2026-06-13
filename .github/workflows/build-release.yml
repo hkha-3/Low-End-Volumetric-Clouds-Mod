@@ -24,21 +24,33 @@ jobs:
     - name: Setup MSBuild Platform Environment
       uses: microsoft/setup-msbuild@v2
 
-    - name: Download Isolated KSP & Unity Reference Assemblies
+    - name: Locate and Prepare KSP & Unity Reference Assemblies
       shell: pwsh
       run: |
-        # KSP mods leverage game-level Assemblies. Since game files aren't in clean runner instances,
-        # we pull clean stripped assemblies to solve reference warnings!
-        New-Item -ItemType Directory -Force -Path "ksp-refs"
+        # Since game files are present in the repository, we locate and copy them to the reference directory
+        # matching the expected structure $(KspPath)\KSP_x64_Data\Managed\
+        New-Item -ItemType Directory -Force -Path "ksp-refs/KSP_x64_Data/Managed"
         
-        # Download core references from a reliable public public-stripped-assemblies pool
-        $refSource = "https://raw.githubusercontent.com/HeikaZ/KSP-Stripped-Refs/main/KSP_x64_Data/Managed"
-        Invoke-WebRequest -Uri "$refSource/Assembly-CSharp.dll" -OutFile "ksp-refs/Assembly-CSharp.dll"
-        Invoke-WebRequest -Uri "$refSource/UnityEngine.dll" -OutFile "ksp-refs/UnityEngine.dll"
-        Invoke-WebRequest -Uri "$refSource/UnityEngine.CoreModule.dll" -OutFile "ksp-refs/UnityEngine.CoreModule.dll"
-        Invoke-WebRequest -Uri "$refSource/UnityEngine.ImageConversionModule.dll" -OutFile "ksp-refs/UnityEngine.ImageConversionModule.dll"
+        $dlls = @(
+            "Assembly-CSharp.dll",
+            "UnityEngine.dll",
+            "UnityEngine.CoreModule.dll",
+            "UnityEngine.ImageConversionModule.dll"
+        )
         
-        Write-Host "Success: All KSP/Unity dependency references successfully downloaded!"
+        foreach ($dll in $dlls) {
+            # Find the DLL in the checked out files, excluding any located in the target 'ksp-refs' folder itself
+            $file = Get-ChildItem -Path . -Filter $dll -Recurse | Where-Object { $_.FullName -notmatch "ksp-refs" } | Select-Object -First 1
+            if ($file) {
+                Write-Host "Success: Found local $dll at $($file.FullName), copying into structured reference space..."
+                Copy-Item -Path $file.FullName -Destination "ksp-refs/KSP_x64_Data/Managed/$dll" -Force
+            } else {
+                Write-Error "CRITICAL ERROR: Required reference assembly file '$dll' was not found in the repository!"
+                exit 1
+            }
+        }
+        
+        Write-Host "Success: All local reference assemblies successfully located and structured!"
 
     - name: Restore Project NuGet Dependencies
       run: dotnet restore LowEndVolumetricCloudsMod.csproj
@@ -51,9 +63,45 @@ jobs:
     - name: Package Release Assets for CKAN & Manual Install
       shell: pwsh
       run: |
-        # Creates a standardized GameData directory zip matching CKAN rules
-        # ModFiles post-build event copies dll, shader, and version automatically to GameData folder
-        Compress-Archive -Path "GameData/LowEndVolumetricCloudsMod" -DestinationPath "LowEndVolumetricCloudsMod-${{ github.ref_name }}.zip"
+        # 1. Clean and build the precise GameData directory structure matching CKAN and KSP manual standards
+        $gamedataPath = "GameData/LowEndVolumetricCloudsMod"
+        $pluginsPath = "$gamedataPath/Plugins"
+        $shadersPath = "$gamedataPath/Shaders"
+        
+        Write-Host "Creating deployment directory structure: $gamedataPath"
+        New-Item -ItemType Directory -Force -Path $pluginsPath
+        New-Item -ItemType Directory -Force -Path $shadersPath
+        
+        # 2. Gather compiled binary dll from the target build outputs
+        $compiledDll = "bin/Release/net472/LowEndVolumetricCloudsMod.dll"
+        if (Test-Path $compiledDll) {
+            Copy-Item -Path $compiledDll -Destination $pluginsPath -Force
+            Write-Host "Success: Copied Assembly DLL into Plugins directory."
+        } else {
+            Write-Error "CRITICAL ERROR: Compiled binary not found at expected path: $compiledDll"
+            exit 1
+        }
+        
+        # 3. Gather Shader resources
+        if (Test-Path "VolumetricCloud.shader") {
+            Copy-Item -Path "VolumetricCloud.shader" -Destination $shadersPath -Force
+            Write-Host "Success: Copied VolumetricCloud.shader into Shaders directory."
+        } else {
+            Write-Warning "Warning: VolumetricCloud.shader source file not found in roots."
+        }
+        
+        # 4. Gather Mod metadata (.version metadata)
+        if (Test-Path "LowEndVolumetricCloudsMod.version") {
+            Copy-Item -Path "LowEndVolumetricCloudsMod.version" -Destination $gamedataPath -Force
+            Write-Host "Success: Copied version metadata file into root of deployment structure."
+        } else {
+            Write-Warning "Warning: LowEndVolumetricCloudsMod.version file not found."
+        }
+        
+        # 5. Compress the entire root GameData directory so unzipping matches GameData roots natively
+        Write-Host "Compressing directory output into package archive folder..."
+        Compress-Archive -Path "GameData" -DestinationPath "LowEndVolumetricCloudsMod-${{ github.ref_name }}.zip" -Force
+        Write-Host "Package creation complete: LowEndVolumetricCloudsMod-${{ github.ref_name }}.zip"
 
     - name: Automatically Publish to GitHub Release
       uses: softprops/action-gh-release@v2
